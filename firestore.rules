@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable, hardened global helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity validator logic
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'role'])
+        && (data.keys().size() == 4 || (data.keys().size() == 5 && data.keys().hasAll(['displayName'])))
+        && data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && data.role is string && (data.role == 'Admin' || data.role == 'User')
+        && (!data.keys().hasAll(['displayName']) || (data.displayName is string && data.displayName.size() <= 128));
+    }
+
+    function isValidFile(data) {
+      return data.keys().hasAll(['id', 'name', 'size', 'type', 'data', 'uploadedAt'])
+        && data.keys().size() == 6
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 256
+        && data.size is int && data.size <= 2000000 && data.size > 0
+        && data.type is string && data.type.size() <= 128
+        && data.data is string && data.data.size() <= 3000000;
+    }
+
+    // Match patterns
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId)
+        && isValidUser(request.resource.data)
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if isOwner(userId)
+        && isValidUser(request.resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false; // Profile deletion is disabled
+    }
+
+    match /users/{userId}/files/{fileId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(fileId)
+        && isValidFile(request.resource.data)
+        && request.resource.data.id == fileId;
+      allow update: if false; // File documents are immutable
+      allow delete: if isOwner(userId);
+    }
+  }
+}

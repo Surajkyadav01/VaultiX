@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a registered user",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique Firebase Auth identifier for the user"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's registered email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "File": {
+      "title": "Uploaded File",
+      "description": "Metadata and base64 representation of a secure client file",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID matching the file record"
+        },
+        "name": {
+          "type": "string",
+          "description": "The file's client filename"
+        },
+        "size": {
+          "type": "number",
+          "description": "Size of the file in bytes"
+        },
+        "type": {
+          "type": "string",
+          "description": "MIME type of the file"
+        },
+        "data": {
+          "type": "string",
+          "description": "Base64 encoded file payload contents"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of file upload"
+        }
+      },
+      "required": ["id", "name", "size", "type", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records containing owner matching properties"
+    },
+    "/users/{userId}/files/{fileId}": {
+      "schema": "File",
+      "description": "Upload files collection fully nested under the authenticated owner"
+    }
+  }
+}

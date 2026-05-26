@@ -1,0 +1,6 @@
+{
+  "name": "VaultiX Client File Portal",
+  "description": "A secure client file portal where freelancers and designers can let clients safely upload, download, and manage creative deliverables and assets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
